@@ -1,0 +1,25 @@
+{
+  "name": "스톤 정산",
+  "short_name": "스톤정산",
+  "description": "스톤 정산 앱 - 공연 스탬프 및 할인 관리",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#090707",
+  "theme_color": "#090707",
+  "lang": "ko",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
