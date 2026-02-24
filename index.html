@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="스톤 정산">
+<meta name="apple-mobile-web-app-title" content="stone">
 <meta name="theme-color" content="#090707">
 <link rel="manifest" href="manifest.json">
 <title>스톤 정산 v0.0.2</title>
@@ -465,7 +465,7 @@ body.day .detail-backdrop.show{background:rgba(40,40,60,.4)}
   <div class="wallet-cards" id="walletCards"></div>
   <!-- 할인권 추가 기록 인라인 테이블 -->
   <div id="walletEntriesSection" style="margin-top:10px;display:none">
-    <div style="font-size:9px;letter-spacing:.15em;color:var(--txt4);text-transform:uppercase;margin-bottom:5px">추가 기록</div>
+    <div style="font-size:9px;letter-spacing:.15em;color:var(--txt4);text-transform:uppercase;margin-bottom:5px">할인권 상세 기록</div>
     <table id="walletEntriesTable" style="width:100%;border-collapse:collapse;font-size:11px"></table>
   </div>
 </div>
@@ -526,7 +526,7 @@ body.day .detail-backdrop.show{background:rgba(40,40,60,.4)}
           <option value="프리뷰">프리뷰</option>
           <option value="40%">40% 할인권 사용</option>
           <option value="50%">50% 할인권 사용</option>
-          <option value="증빙프패">증빙프패 사용</option>
+          <option value="증빙프패">증빙프패</option>
           <option value="교환">교환</option>
         </select>
       </div>
@@ -892,8 +892,15 @@ function refreshModalBoards(checkedIds){
     var span=document.createElement('span');span.className='bc-lbl-txt';
     span.textContent=b.name+(active?'':' (비활성)');
     lbl.appendChild(chk);lbl.appendChild(span);
-    // JS sync on change
-    chk.addEventListener('change',function(){lbl.classList.toggle('sel',this.checked);});
+    // 단일 선택: 체크 시 나머지 해제
+    chk.addEventListener('change',function(){
+      if(this.checked){
+        div.querySelectorAll('input[type=checkbox]').forEach(function(c){
+          if(c!==chk){c.checked=false;c.closest('.bc-label').classList.remove('sel');}
+        });
+      }
+      lbl.classList.toggle('sel',this.checked);
+    });
     if(chk.checked)lbl.classList.add('sel');
     div.appendChild(lbl);
   });
@@ -1278,15 +1285,33 @@ function renderWallet(rows){
       useRows.push({
         type:'use', date:p.date,
         u40:d==='40%'?1:0, u50:d==='50%'?1:0, uCert:d==='증빙프패'?1:0,
-        note:'티켓 사용', pid:p.id
+        note:'사용', pid:p.id
       });
     }
   });
 
   var sec=ge('walletEntriesSection');
   var tbl=ge('walletEntriesTable');
-  var allRows=useRows.concat(entries.map(function(we){return{type:'add',date:we.date,we:we};}));
-  allRows.sort(function(a,b){return (a.date||'') < (b.date||'') ? -1 : (a.date||'') > (b.date||'') ? 1 : (a.type==='use'?-1:1);});
+  // 마일스톤 획득 행 자동 생성 (computeRows 결과 기반)
+  var msRows=[];
+  (rows||[]).forEach(function(r){
+    var d40=r.final.discount40||0;var d50=r.final.discount50||0;
+    if(d40>0||d50>0){
+      // 어떤 마일스톤이 이 행에서 달성됐는지
+      var hits=[];
+      Object.values(r.newMS||{}).forEach(function(ms){ms.forEach(function(m){if(hits.indexOf(m)<0)hits.push(m);});});
+      hits.sort();
+      var note=hits.length?hits.map(function(m){return m+'◆달성';}).join(' '):'마일스톤 획득';
+      msRows.push({type:'ms',date:r.perf.date,add40:d40,add50:d50,note:note});
+    }
+  });
+  var allRows=useRows.concat(msRows).concat(entries.map(function(we){return{type:'add',date:we.date,we:we};}));
+  allRows.sort(function(a,b){
+    if((a.date||'')<(b.date||''))return -1;
+    if((a.date||'')>(b.date||''))return 1;
+    var order={use:0,ms:1,add:2};
+    return (order[a.type]||1)-(order[b.type]||1);
+  });
   if(!allRows.length){sec.style.display='none';return;}
   sec.style.display='block';
   tbl.innerHTML='<thead><tr>'+
@@ -1300,6 +1325,16 @@ function renderWallet(rows){
           '<td style="color:var(--red3)">'+(r.u40?'−1':'')+'</td>'+
           '<td style="color:var(--red3)">'+(r.u50?'−1':'')+'</td>'+
           '<td style="color:var(--red3)">'+(r.uCert?'−1':'')+'</td>'+
+          '<td style="color:var(--txt4);font-size:10px">'+esc(r.note)+'</td>'+
+          '<td></td>'+
+          '</tr>';
+      }else if(r.type==='ms'){
+        return '<tr class="we-ms-row">'+
+          '<td>'+(r.date?formatDate(r.date):'—')+'</td>'+
+          '<td style="color:var(--red3);font-size:9px;letter-spacing:.05em">◆획득</td>'+
+          '<td style="color:var(--grn2);font-weight:700">'+(r.add40?'+'+r.add40:'')+'</td>'+
+          '<td style="color:var(--grn2);font-weight:700">'+(r.add50?'+'+r.add50:'')+'</td>'+
+          '<td></td>'+
           '<td style="color:var(--txt4);font-size:10px">'+esc(r.note)+'</td>'+
           '<td></td>'+
           '</tr>';
@@ -1370,6 +1405,8 @@ function renderTable(){
     '<th style="text-align:left;padding-left:10px">날짜</th>'+
     '<th>할인</th>'+thBds+
     '<th class="rh">폴라</th>'+
+    '<th class="rh">40%누적</th>'+
+    '<th class="rh">50%누적</th>'+
     '<th class="rh">OST</th>'+
     '<th class="uh">사용</th><th class="eh">교환</th><th></th></tr>';
 
@@ -1413,7 +1450,7 @@ function renderTable(){
     }).join('');
 
     var discOpts=DISC_OPTS.map(function(o){
-      var lbl=o===''?'없음':o==='40%'?'40% 사용':o==='50%'?'50% 사용':o==='증빙프패'?'증빙 사용':o;
+      var lbl=o===''?'없음':o==='40%'?'40% 사용':o==='50%'?'50% 사용':o==='증빙프패'?'증빙프패':o;
       return '<option value="'+o+'"'+(perf.discount===o?' selected':'')+'>'+lbl+'</option>';
     }).join('');
 
@@ -1450,6 +1487,8 @@ function renderTable(){
       '<td><select class="ci" data-pid="'+pid+'" data-field="discount">'+discOpts+'</select></td>'+
       bdCols+
       '<td>'+polHtml+'</td>'+
+      '<td>'+(row.final.discount40?'<span class="ms-chip" style="color:var(--grn2);font-size:12px;font-weight:700">+'+row.final.discount40+'</span>':'')+'</td>'+
+      '<td>'+(row.final.discount50?'<span class="ms-chip" style="color:var(--blu2);font-size:12px;font-weight:700">+'+row.final.discount50+'</span>':'')+'</td>'+
       '<td>'+ostHtml+'</td>'+
       usedCell+exCell+
       '<td style="white-space:nowrap">'+
@@ -1494,7 +1533,7 @@ function openDetail(pid){
 
   // 기본 정보
   var basicChips=[];
-  if(perf.discount)basicChips.push('<span class="detail-chip '+(perf.discount==='40%'||perf.discount==='50%'||perf.discount==='증빙프패'?'ylw':'')+'">'+esc(perf.discount==='40%'?'40% 사용':perf.discount==='50%'?'50% 사용':perf.discount==='증빙프패'?'증빙 사용':perf.discount)+'</span>');
+  if(perf.discount)basicChips.push('<span class="detail-chip '+(perf.discount==='40%'||perf.discount==='50%'||perf.discount==='증빙프패'?'ylw':'')+'">'+esc(perf.discount==='40%'?'40% 사용':perf.discount==='50%'?'50% 사용':perf.discount==='증빙프패'?'증빙프패':perf.discount)+'</span>');
   if(perf.multiplier>1)basicChips.push('<span class="detail-chip red">×'+perf.multiplier+' 배율</span>');
   if(row.final.polaroid)basicChips.push('<span class="detail-chip blu">📸 폴라로이드</span>');
   if(row.final.ost)basicChips.push('<span class="detail-chip grn">♪ OST</span>');

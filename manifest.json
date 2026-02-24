@@ -1,6 +1,6 @@
 {
-  "name": "스톤 정산",
-  "short_name": "스톤정산",
+  "name": "stone",
+  "short_name": "stone",
   "description": "스톤 정산 앱 - 공연 스탬프 및 할인 관리",
   "start_url": "./",
   "display": "standalone",

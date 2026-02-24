@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stone-stamp-v0.0.2';
+const CACHE_NAME = 'stone-stamp-v0.0.3';
 const ASSETS = [
   './',
   './index.html',
