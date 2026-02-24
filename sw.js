@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stone-stamp-v0.0.3';
+const CACHE_NAME = 'stone-stamp-v1.0.0';
 const ASSETS = [
   './',
   './index.html',
@@ -10,7 +10,7 @@ const ASSETS = [
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS.slice(0, 3)); // 로컬 파일만 캐싱 (폰트는 별도)
+      return cache.addAll(ASSETS.slice(0, 3));
     }).then(function() {
       return self.skipWaiting();
     })
@@ -33,7 +33,6 @@ self.addEventListener('activate', function(e) {
 
 // Fetch — Cache-first 전략 (오프라인 지원)
 self.addEventListener('fetch', function(e) {
-  // Google Fonts는 network-first
   if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {
     e.respondWith(
       caches.open(CACHE_NAME).then(function(cache) {
@@ -48,7 +47,6 @@ self.addEventListener('fetch', function(e) {
     return;
   }
 
-  // 나머지는 cache-first
   e.respondWith(
     caches.match(e.request).then(function(cached) {
       if (cached) return cached;
