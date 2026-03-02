@@ -1,0 +1,9 @@
+[
+  { "name": "무대인사", "startDate": "2026-03-05", "endDate": "2026-03-07", "color": "#00BFFF" },
+  { "name": "캐릭터포스터엽서증정", "startDate": "2026-03-05", "endDate": "2026-03-08", "color": "#E91E8C" },
+  { "name": "프리뷰", "startDate": "2026-03-06", "endDate": "2026-03-08", "color": "#4CAF50" },
+  { "name": "커튼콜 위크", "startDate": "2026-03-10", "endDate": "2026-03-15", "color": "#7B3FC4" },
+  { "name": "쿠폰팩 증정", "startDate": "2026-03-17", "endDate": "2026-03-22", "color": "#E05A1A" },
+  { "name": "스페셜커튼콜", "startDate": "2026-03-31", "endDate": "2026-04-05", "color": "#7B3FC4" },
+  { "name": "트리플적립", "startDate": "2026-04-07", "endDate": "2026-04-12", "color": "#F5A623" }
+]

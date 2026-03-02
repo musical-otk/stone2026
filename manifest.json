@@ -1,25 +1,23 @@
 {
-  "name": "stone",
-  "short_name": "stone",
-  "description": "스톤 정산 앱 - 공연 스탬프 및 할인 관리",
-  "start_url": "./",
+  "name": "ROGER 2026",
+  "short_name": "ROGER",
+  "description": "뮤지컬 ROGER 2026 관람 기록 앱",
+  "start_url": "/roger2026/",
+  "scope": "/roger2026/",
   "display": "standalone",
-  "background_color": "#090707",
-  "theme_color": "#090707",
-  "lang": "ko",
+  "background_color": "#f5f6fa",
+  "theme_color": "#3B6FE8",
   "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
