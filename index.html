@@ -1528,12 +1528,8 @@ function renderCalendar() {
   for (let w = 0; w < weeks; w++) {
     const wSegs = segments.filter(s => s.week === w);
     const maxRow = wSegs.length ? Math.max(...wSegs.map(s => s.row)) + 1 : 0;
-    // 이벤트 높이 계산 (행당 17px)
-    const evHeight = maxRow * 17;
 
-    html += '<div class="cal-week-wrap" style="position:relative;">';
-
-    // 날짜 행 (먼저)
+    // 날짜 행
     html += '<div class="cal-grid">';
     for (let col = 0; col < 7; col++) {
       const cell = w*7+col;
@@ -1554,11 +1550,30 @@ function renderCalendar() {
       else if (dow2 === 6)      cls += ' sat';
       if (ds === calSelectedDs) cls += ' selected';
 
-      // 필터 여부와 관계없이 해당 회차 표시 (필터 있으면 필터 기준, 없으면 전체)
-      const displaySch = filteredDaySch;
+      // 이 날짜에 걸리는 이벤트 (row별로)
+      const dayCell = w*7+col;
+      let evHtml = '';
+      for (let row = 0; row < maxRow; row++) {
+        const seg = wSegs.find(s => s.row === row && s.startCol <= col && s.endCol >= col);
+        if (seg) {
+          // 바의 시작 셀에서만 텍스트 표시, 나머지는 색상 연장
+          const isStart = seg.startCol === col;
+          const isEnd   = seg.endCol   === col;
+          const radius  = isStart && isEnd ? '4px' : isStart ? '4px 0 0 4px' : isEnd ? '0 4px 4px 0' : '0';
+          const marginL = isStart ? '1px' : '0';
+          const marginR = isEnd   ? '1px' : '0';
+          evHtml += `<div style="height:15px;background:${seg.color};border-radius:${radius};margin:1px ${marginR} 0 ${marginL};display:flex;align-items:center;padding:0 ${isStart?'4px':'0'};overflow:hidden;">
+            ${isStart ? `<span style="font-size:9px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${seg.name}</span>` : ''}
+          </div>`;
+        } else {
+          evHtml += `<div style="height:15px;margin:1px 0 0;"></div>`;
+        }
+      }
+
+      // 회차
       let sessionHtml = '';
-      if (displaySch.length) {
-        sessionHtml = displaySch
+      if (filteredDaySch.length) {
+        sessionHtml = filteredDaySch
           .sort((a,b) => a.time.localeCompare(b.time))
           .map(s => {
             const key = `${ds}-${s.time}`;
@@ -1572,29 +1587,11 @@ function renderCalendar() {
 
       html += `<div class="${cls}" onclick="calDayClick('${ds}')">
         <span class="cal-day-num">${day}</span>
-        <div style="height:${evHeight}px;flex-shrink:0;"></div>
+        ${evHtml}
         ${sessionHtml}
       </div>`;
     }
     html += '</div>';
-
-    // 이벤트 오버레이 (날짜 그리드 위에 겹쳐서)
-    if (maxRow > 0) {
-      // 날짜 숫자 높이 약 20px 아래부터
-      html += `<div class="cal-event-overlay" style="top:20px;">`;
-      for (let row = 0; row < maxRow; row++) {
-        html += '<div class="cal-event-row">';
-        wSegs.filter(s => s.row === row).forEach(s => {
-          const leftPct  = (s.startCol/7*100).toFixed(2);
-          const widthPct = ((s.endCol-s.startCol+1)/7*100).toFixed(2);
-          html += `<div class="cal-event-bar-full" style="left:${leftPct}%;width:calc(${widthPct}% - 2px);background:${s.color};">${s.name}</div>`;
-        });
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-
-    html += '</div>'; // cal-week-wrap
   }
 
   document.getElementById('cal-wrap').innerHTML = html;
