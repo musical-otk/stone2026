@@ -1,60 +1,62 @@
-const CACHE_NAME = 'roger2026-v3';
-const BASE = '/roger2026';
-
-// 앱 시작 시 캐시할 파일들
-const PRECACHE_URLS = [
-  BASE + '/',
-  BASE + '/index.html',
-  BASE + '/roger_app.html',
-  BASE + '/manifest.json',
+const CACHE_NAME = 'stone-stamp-v1.0.0';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Share+Tech+Mono&display=swap'
 ];
 
-// install: 기본 파일 캐시
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS))
+// 설치 — 핵심 파일 캐싱
+self.addEventListener('install', function(e) {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(ASSETS.slice(0, 3));
+    }).then(function() {
+      return self.skipWaiting();
+    })
   );
-  self.skipWaiting();
 });
 
-// activate: 구 캐시 정리
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+// 활성화 — 이전 캐시 삭제
+self.addEventListener('activate', function(e) {
+  e.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(
+        keys.filter(function(key) { return key !== CACHE_NAME; })
+            .map(function(key) { return caches.delete(key); })
+      );
+    }).then(function() {
+      return self.clients.claim();
+    })
   );
-  self.clients.claim();
 });
 
-// fetch: 네트워크 우선, 실패 시 캐시
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-
-  // schedule.json — 네트워크 우선 (최신 스케줄), 실패 시 캐시
-  if (url.pathname.endsWith('schedule.json') || url.pathname.endsWith('events.json')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request))
+// Fetch — Cache-first 전략 (오프라인 지원)
+self.addEventListener('fetch', function(e) {
+  if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {
+    e.respondWith(
+      caches.open(CACHE_NAME).then(function(cache) {
+        return fetch(e.request).then(function(res) {
+          cache.put(e.request, res.clone());
+          return res;
+        }).catch(function() {
+          return caches.match(e.request);
+        });
+      })
     );
     return;
   }
 
-  // 나머지 — 캐시 우선, 없으면 네트워크
-  event.respondWith(
-    caches.match(event.request).then(cached => {
+  e.respondWith(
+    caches.match(e.request).then(function(cached) {
       if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
+      return fetch(e.request).then(function(res) {
+        if (!res || res.status !== 200 || res.type === 'opaque') return res;
+        var resClone = res.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(e.request, resClone);
+        });
+        return res;
       });
     })
   );
